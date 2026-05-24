@@ -24,12 +24,18 @@ border-radius:30px;
 margin-top:20px;
 }
 
-h1{font-size:55px;}
+h1{
+font-size:55px;
+}
 
 #problem{
 font-size:50px;
 margin:35px;
 line-height:1.8;
+}
+
+#mode{
+font-size:35px;
 }
 
 #timer{
@@ -38,7 +44,9 @@ color:yellow;
 margin:20px;
 }
 
-.info{font-size:35px;}
+.info{
+font-size:35px;
+}
 
 input{
 width:90px;
@@ -59,6 +67,19 @@ cursor:pointer;
 margin-top:25px;
 }
 
+.fraction{
+display:flex;
+flex-direction:column;
+align-items:center;
+font-size:42px;
+}
+
+.line{
+width:550px;
+border-top:4px solid white;
+margin:10px;
+}
+
 #result{
 font-size:60px;
 font-weight:bold;
@@ -74,15 +95,23 @@ height:80px;
 
 <div class="card">
 
-<div class="info">점수 : <span id="score">0</span></div>
-<div class="info">목숨 : <span id="life">3</span></div>
+<div class="info">
+점수 : <span id="score">0</span>
+</div>
 
-<div id="timer">20</div>
+<div class="info">
+목숨 : <span id="life">3</span>
+</div>
+
+<div id="timer">15</div>
 
 <h2 id="mode"></h2>
+
 <div id="problem"></div>
 
-<button onclick="submitAnswer()">제출</button>
+<button onclick="submitAnswer()">
+제출
+</button>
 
 <div id="result"></div>
 
@@ -94,234 +123,472 @@ let score=0;
 let life=3;
 let answer=[];
 
+let remain=15;
 let timer;
 let startTime;
 
-/* ================= 유틸 ================= */
-
-function getRange(){
-return Math.min(30, Math.floor(5 + score/8));
-}
+let scoreText=document.getElementById("score");
+let lifeText=document.getElementById("life");
+let mode=document.getElementById("mode");
+let problem=document.getElementById("problem");
+let result=document.getElementById("result");
 
 function updateUI(){
-document.getElementById("score").innerText=score;
-document.getElementById("life").innerText=life;
+scoreText.innerText=score;
+lifeText.innerText=life;
 }
 
-/* ================= 타이머 ================= */
+function getIntegerRange(){
+
+if(score<30)return 5;
+if(score<60)return 10;
+if(score<100)return 20;
+
+return 30;
+
+}
+
+function getRootRange(){
+
+if(score<30)return 4;
+if(score<60)return 6;
+if(score<100)return 8;
+if(score<150)return 10;
+
+return 12;
+
+}
+
+function simplifyRoot(n){
+
+let out=1;
+let inside=n;
+
+for(let i=2;i*i<=inside;i++){
+
+while(
+inside%(i*i)==0
+){
+
+out*=i;
+inside/=i*i;
+
+}
+
+}
+
+return [out,inside];
+
+}
 
 function startTimer(){
+
 clearInterval(timer);
-let remain=20;
+
+remain=15;
 
 timer=setInterval(()=>{
+
 remain--;
-document.getElementById("timer").innerText=remain;
+
+timer.innerText=remain;
+
+document.getElementById(
+"timer"
+).innerText=remain;
 
 if(remain<=0){
+
 clearInterval(timer);
+
 life--;
+
+result.innerHTML=
+'<span style="color:orange">⏰ 시간 초과!</span>';
+
 updateUI();
-if(life<=0) return gameOver();
-setTimeout(newProblem,1000);
+
+if(life<=0){
+
+gameOver();
+return;
+
+}
+
+setTimeout(
+newProblem,
+1000
+);
+
 }
 
 },1000);
+
 }
 
-/* ================= 유리수해 (핵심 수정) ================= */
+function newProblem(){
 
-function randomFraction(range){
-let n=Math.floor(Math.random()*range*2)-range;
-let d=Math.floor(Math.random()*range)+1;
-return [n,d];
+result.innerHTML="";
+
+if(Math.random()<0.5)
+
+integerMode();
+
+else
+
+rootMode();
+
+startTime=
+Date.now();
+
+startTimer();
+
 }
 
-function randomInteger(range){
-return [Math.floor(Math.random()*range)+1,1];
+function integerMode(){
+
+mode.innerText=
+"정수해 모드";
+
+let range=
+getIntegerRange();
+
+let r1=
+Math.floor(
+Math.random()*range
+)+1;
+
+let r2;
+
+if(Math.random()<0.2){
+
+r2=r1;
+
+}else{
+
+r2=
+Math.floor(
+Math.random()*range
+)+1;
+
 }
 
-function mixedRoot(range){
-return Math.random()<0.5
-? randomInteger(range)
-: randomFraction(range);
-}
-
-/* ✔ 분수 UI 렌더 */
-function renderFraction(id,val){
-
-if(val[1] === 1){
-return `<input id="${id}">`;
-}
-
-return `
-<div style="display:inline-flex;flex-direction:column;align-items:center;">
-  <input id="${id}n">
-  <div style="width:60px;border-top:2px solid white;"></div>
-  <input id="${id}d">
-</div>
-`;
-}
-
-/* ================= 유리수해 문제 ================= */
-
-function fractionMode(){
-
-let range=getRange();
-
-let r1=mixedRoot(range);
-let r2=mixedRoot(range);
+let b=-(r1+r2);
+let c=r1*r2;
 
 answer=[r1,r2];
 
-document.getElementById("problem").innerHTML=`
-x² = ...
+if(r1==r2){
+
+problem.innerHTML=
+`
+
+x²
+${b>=0?"+":""}${b}x
++${c}=0
+
 <br><br>
 
-x =
-${renderFraction("x1",r1)}
-,
-${renderFraction("x2",r2)}
+(중근)
+
+<br><br>
+
+<input id="x1">
+
+`;
+
+}else{
+
+problem.innerHTML=
+`
+
+x²
+${b>=0?"+":""}${b}x
++${c}=0
+
+<br><br>
+
+<input id="x1">
+<input id="x2">
+
 `;
 
 }
 
-/* ================= 근의 공식 ================= */
-
-function simplifyRoot(n){
-let out=1, inside=n;
-for(let i=2;i*i<=inside;i++){
-while(inside%(i*i)==0){
-out*=i;
-inside/=i*i;
-}
-}
-return [out,inside];
 }
 
 function rootMode(){
 
-let range=getRange();
+mode.innerText=
+"근의 공식 모드";
 
 let a,b,c,D;
 
+let range=
+getRootRange();
+
 while(true){
-a=Math.floor(Math.random()*range)+1;
-b=Math.floor(Math.random()*range*4)-(range*2);
-c=Math.floor(Math.random()*range)+1;
+
+a=
+Math.floor(Math.random()*range)+1;
+
+b=
+Math.floor(
+Math.random()*(range*4)
+)-(range*2);
+
+c=
+Math.floor(Math.random()*range)+1;
 
 D=b*b-4*a*c;
-if(D>0 && Math.sqrt(D)%1!==0) break;
+
+let root=Math.sqrt(D);
+
+if(
+D>0
+&&
+root!=Math.floor(root)
+)break;
+
 }
 
 let d,e,f;
 
 if(b%2==0){
+
 d=a;
 e=-b/2;
 f=D/4;
+
 }else{
+
 d=2*a;
 e=-b;
 f=D;
+
 }
 
 let temp=simplifyRoot(f);
-answer=[d,e,temp[0],temp[1]];
 
-if(d==1){
+let out=temp[0];
+let inside=temp[1];
 
-document.getElementById("problem").innerHTML=`
-x =
+answer=[d,e,out,inside];
+
+problem.innerHTML=
+`
+
+${a==1?"":a}x²
+${b>=0?"+":""}${b}x
++${c}=0
+
+<br><br>
+
+${
+d==1?
+
+`
+<div>
+
+x=
 <input id="eBox">
-± √<input id="inBox">
-`;
 
-}else{
+±
 
-document.getElementById("problem").innerHTML=`
-x =
+${
+out==1
+?
+`√ <input id="inBox">`
+:
+`<input id="outBox"> √ <input id="inBox">`
+}
+
+</div>
+
+`
+
+:
+
+`
+
+<div class="fraction">
+
+<div>
+
+x=
 <input id="eBox">
-± √<input id="inBox">
-<br>
-———
+
+±
+
+${
+out==1
+?
+`√ <input id="inBox">`
+:
+`<input id="outBox"> √ <input id="inBox">`
+}
+
+</div>
+
+<div class="line"></div>
+
 <input id="dBox">
+
+</div>
+
+`
+}
+
 `;
-}
-}
 
-/* ================= 문제 생성 ================= */
-
-function newProblem(){
-if(Math.random()<0.5) fractionMode();
-else rootMode();
-
-startTime=Date.now();
-startTimer();
-}
-
-/* ================= 채점 ================= */
-
-function readFraction(id){
-let n=document.getElementById(id+"n");
-let d=document.getElementById(id+"d");
-
-if(!d) return Number(document.getElementById(id).value);
-
-return Number(n.value)/Number(d.value);
 }
 
 function submitAnswer(){
 
 clearInterval(timer);
 
-let gain=Math.max(1,20-Math.floor((Date.now()-startTime)/1000));
+let t=
+Math.floor(
+(Date.now()-startTime)/1000
+);
 
-if(document.getElementById("x1n")){
+let gain=15-t;
 
-let x1=readFraction("x1");
-let x2=readFraction("x2");
+if(gain<1)
+gain=1;
 
-let r1=answer[0][0]/answer[0][1];
-let r2=answer[1][0]/answer[1][1];
+if(mode.innerText=="정수해 모드"){
 
-if((x1==r1 && x2==r2)||(x1==r2 && x2==r1)){
+if(
+x1.value==""
+||
+(document.getElementById("x2")
+&&x2.value=="")
+){
+
+result.innerText=
+"빈칸 입력";
+
+startTimer();
+return;
+
+}
+
+let a=Number(x1.value);
+
+let b=
+document.getElementById("x2")
+?
+Number(x2.value)
+:
+a;
+
+if(
+
+(a==answer[0]
+&&
+b==answer[1])
+
+||
+
+(a==answer[1]
+&&
+b==answer[0])
+
+){
+
 score+=gain;
+
+result.innerHTML=
+'<span style="color:#22c55e">⭕ 정답!</span>';
+
 }else{
+
 life--;
+
+result.innerHTML=
+'<span style="color:red">❌ 오답!</span>';
+
 }
 
 }else{
 
-let e=Number(document.getElementById("eBox").value);
-let inb=Number(document.getElementById("inBox").value);
+let out;
 
-let d=document.getElementById("dBox")
-? Number(document.getElementById("dBox").value)
+if(answer[2]==1){
+
+out=1;
+
+}else{
+
+out=
+Number(outBox.value);
+
+}
+
+let d=
+document.getElementById("dBox")
+?
+Number(dBox.value)
 :1;
 
-if(d==answer[0] && e==answer[1] && inb==answer[3]){
+let e=Number(eBox.value);
+let inside=Number(inBox.value);
+
+if(
+d==answer[0]
+&&
+e==answer[1]
+&&
+inside==answer[3]
+){
+
 score+=gain;
+
+result.innerHTML=
+'<span style="color:#22c55e">⭕ 정답!</span>';
+
 }else{
+
 life--;
+
+result.innerHTML=
+'<span style="color:red">❌ 오답!</span>';
+
 }
 
 }
 
 updateUI();
 
-if(life<=0) return gameOver();
-setTimeout(newProblem,1000);
+if(life<=0){
+
+gameOver();
+return;
+
 }
 
-/* ================= 게임오버 ================= */
+setTimeout(
+newProblem,
+1000
+);
+
+}
 
 function gameOver(){
-alert("게임 종료! 점수: "+score);
+
+alert(
+"게임 종료\n최종 점수:"
++score
+);
+
 score=0;
 life=3;
+
 updateUI();
+
 newProblem();
+
 }
 
 newProblem();
