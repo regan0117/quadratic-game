@@ -59,19 +59,6 @@ cursor:pointer;
 margin-top:25px;
 }
 
-.fraction{
-display:flex;
-flex-direction:column;
-align-items:center;
-font-size:42px;
-}
-
-.line{
-width:550px;
-border-top:4px solid white;
-margin:10px;
-}
-
 #result{
 font-size:60px;
 font-weight:bold;
@@ -110,15 +97,15 @@ let answer=[];
 let timer;
 let startTime;
 
-function updateUI(){
-document.getElementById("score").innerText=score;
-document.getElementById("life").innerText=life;
-}
-
-/* ================= 난이도 ================= */
+/* ================= 유틸 ================= */
 
 function getRange(){
 return Math.min(30, Math.floor(5 + score/8));
+}
+
+function updateUI(){
+document.getElementById("score").innerText=score;
+document.getElementById("life").innerText=life;
 }
 
 /* ================= 타이머 ================= */
@@ -142,13 +129,7 @@ setTimeout(newProblem,1000);
 },1000);
 }
 
-/* ================= 수학 ================= */
-
-function gcd(a,b){
-a=Math.abs(a); b=Math.abs(b);
-while(b){let t=a%b; a=b; b=t;}
-return a;
-}
+/* ================= 유리수해 (핵심 수정) ================= */
 
 function randomFraction(range){
 let n=Math.floor(Math.random()*range*2)-range;
@@ -160,39 +141,49 @@ function randomInteger(range){
 return [Math.floor(Math.random()*range)+1,1];
 }
 
-/* ================= 유리수해 ================= */
+function mixedRoot(range){
+return Math.random()<0.5
+? randomInteger(range)
+: randomFraction(range);
+}
+
+/* ✔ 분수 UI 렌더 */
+function renderFraction(id,val){
+
+if(val[1] === 1){
+return `<input id="${id}">`;
+}
+
+return `
+<div style="display:inline-flex;flex-direction:column;align-items:center;">
+  <input id="${id}n">
+  <div style="width:60px;border-top:2px solid white;"></div>
+  <input id="${id}d">
+</div>
+`;
+}
+
+/* ================= 유리수해 문제 ================= */
 
 function fractionMode(){
 
 let range=getRange();
 
-let r1=Math.random()<0.5?randomInteger(range):randomFraction(range);
-let r2=Math.random()<0.5?randomInteger(range):randomFraction(range);
+let r1=mixedRoot(range);
+let r2=mixedRoot(range);
 
 answer=[r1,r2];
-
-function render(id,val){
-let v=val[0]/val[1];
-
-if(val[1]===1){
-return `<input id="${id}">`;
-}else{
-return `
-<div>
-<input id="${id}n"> / <input id="${id}d">
-</div>
-`;
-}
-}
 
 document.getElementById("problem").innerHTML=`
 x² = ...
 <br><br>
+
 x =
-${render("x1",r1)}
+${renderFraction("x1",r1)}
 ,
-${render("x2",r2)}
+${renderFraction("x2",r2)}
 `;
+
 }
 
 /* ================= 근의 공식 ================= */
@@ -236,16 +227,22 @@ f=D;
 }
 
 let temp=simplifyRoot(f);
-
 answer=[d,e,temp[0],temp[1]];
 
 if(d==1){
+
 document.getElementById("problem").innerHTML=`
-x = <input id="eBox"> ± √<input id="inBox">
+x =
+<input id="eBox">
+± √<input id="inBox">
 `;
+
 }else{
+
 document.getElementById("problem").innerHTML=`
-x = <input id="eBox"> ± √<input id="inBox">
+x =
+<input id="eBox">
+± √<input id="inBox">
 <br>
 ———
 <input id="dBox">
@@ -253,7 +250,7 @@ x = <input id="eBox"> ± √<input id="inBox">
 }
 }
 
-/* ================= 문제 ================= */
+/* ================= 문제 생성 ================= */
 
 function newProblem(){
 if(Math.random()<0.5) fractionMode();
@@ -265,6 +262,15 @@ startTimer();
 
 /* ================= 채점 ================= */
 
+function readFraction(id){
+let n=document.getElementById(id+"n");
+let d=document.getElementById(id+"d");
+
+if(!d) return Number(document.getElementById(id).value);
+
+return Number(n.value)/Number(d.value);
+}
+
 function submitAnswer(){
 
 clearInterval(timer);
@@ -273,18 +279,8 @@ let gain=Math.max(1,20-Math.floor((Date.now()-startTime)/1000));
 
 if(document.getElementById("x1n")){
 
-// 분수 모드
-function read(id){
-let n=document.getElementById(id+"n");
-let d=document.getElementById(id+"d");
-
-if(!d) return Number(n.value);
-
-return Number(n.value)/Number(d.value);
-}
-
-let x1=read("x1");
-let x2=read("x2");
+let x1=readFraction("x1");
+let x2=readFraction("x2");
 
 let r1=answer[0][0]/answer[0][1];
 let r2=answer[1][0]/answer[1][1];
@@ -297,19 +293,19 @@ life--;
 
 }else{
 
-// 근의 공식
 let e=Number(document.getElementById("eBox").value);
 let inb=Number(document.getElementById("inBox").value);
 
-let d = document.getElementById("dBox")
+let d=document.getElementById("dBox")
 ? Number(document.getElementById("dBox").value)
-: 1;
+:1;
 
 if(d==answer[0] && e==answer[1] && inb==answer[3]){
 score+=gain;
 }else{
 life--;
 }
+
 }
 
 updateUI();
@@ -322,7 +318,8 @@ setTimeout(newProblem,1000);
 
 function gameOver(){
 alert("게임 종료! 점수: "+score);
-score=0; life=3;
+score=0;
+life=3;
 updateUI();
 newProblem();
 }
