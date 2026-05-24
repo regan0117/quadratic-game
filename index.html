@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -82,8 +82,10 @@ margin:10px;
 }
 
 #result{
-font-size:35px;
-margin-top:20px;
+font-size:60px;
+font-weight:bold;
+margin-top:25px;
+height:80px;
 }
 
 </style>
@@ -208,15 +210,14 @@ clearInterval(timer);
 
 life--;
 
-result.innerText=
-"⏰ 시간 초과!";
+result.innerHTML=
+'<span style="color:orange">⏰ 시간 초과!</span>';
 
 updateUI();
 
 if(life<=0){
 
 gameOver();
-
 return;
 
 }
@@ -234,7 +235,7 @@ newProblem,
 
 function newProblem(){
 
-result.innerText="";
+result.innerHTML="";
 
 if(Math.random()<0.5)
 
@@ -374,6 +375,37 @@ ${b>=0?"+":""}${b}x
 
 <br><br>
 
+${
+d==1
+
+?
+
+`
+
+<div>
+
+x=
+
+<input id="eBox">
+
+±
+
+${
+out==1
+?
+`√ <input id="inBox">`
+:
+`<input id="outBox"> √ <input id="inBox">`
+}
+
+</div>
+
+`
+
+:
+
+`
+
 <div class="fraction">
 
 <div>
@@ -400,6 +432,10 @@ out==1
 
 </div>
 
+`
+
+}
+
 `;
 
 }
@@ -420,10 +456,7 @@ let gain=
 if(gain<1)
 gain=1;
 
-if(
-mode.innerText==
-"정수해 모드"
-){
+if(mode.innerText=="정수해 모드"){
 
 if(
 x1.value==""
@@ -440,11 +473,8 @@ return;
 
 }
 
-let a=
-Number(x1.value);
-
-let b=
-Number(x2.value);
+let a=Number(x1.value);
+let b=Number(x2.value);
 
 if(
 
@@ -462,16 +492,17 @@ b==answer[0])
 
 score+=gain;
 
-result.innerText=
-"✔ 정답! +"+gain+"점";
+result.innerHTML=
+'<span style="color:#22c55e">⭕ 정답! +'
++gain+
+'점</span>';
 
-}
-else{
+}else{
 
 life--;
 
-result.innerText=
-"❌ 오답!";
+result.innerHTML=
+'<span style="color:red">❌ 오답!</span>';
 
 }
 
@@ -501,14 +532,9 @@ Number(outBox.value);
 
 }
 
-let d=
-Number(dBox.value);
-
-let e=
-Number(eBox.value);
-
-let inside=
-Number(inBox.value);
+let d=dBox ? Number(dBox.value):1;
+let e=Number(eBox.value);
+let inside=Number(inBox.value);
 
 if(
 
@@ -524,16 +550,17 @@ inside==answer[3]
 
 score+=gain;
 
-result.innerText=
-"✔ 정답! +"+gain+"점";
+result.innerHTML=
+'<span style="color:#22c55e">⭕ 정답! +'
++gain+
+'점</span>';
 
-}
-else{
+}else{
 
 life--;
 
-result.innerText=
-"❌ 오답!";
+result.innerHTML=
+'<span style="color:red">❌ 오답!</span>';
 
 }
 
