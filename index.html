@@ -107,46 +107,25 @@ let score=0;
 let life=3;
 let answer=[];
 
-let remain=20;
 let timer;
 let startTime;
 
-let timeLimit=20;
-
-let scoreText=document.getElementById("score");
-let lifeText=document.getElementById("life");
-let mode=document.getElementById("mode");
-let problem=document.getElementById("problem");
-let result=document.getElementById("result");
-
 function updateUI(){
-scoreText.innerText=score;
-lifeText.innerText=life;
+document.getElementById("score").innerText=score;
+document.getElementById("life").innerText=life;
 }
 
-function gcd(a,b){
-a=Math.abs(a);
-b=Math.abs(b);
-while(b){
-let t=a%b;
-a=b;
-b=t;
-}
-return a;
-}
-
-/* ================= 난이도 (부드러운 증가) ================= */
+/* ================= 난이도 ================= */
 
 function getRange(){
-return Math.min(30, Math.floor(5 + score / 8));
+return Math.min(30, Math.floor(5 + score/8));
 }
 
-/* ================= 시간 ================= */
+/* ================= 타이머 ================= */
 
 function startTimer(){
-
 clearInterval(timer);
-remain=20;
+let remain=20;
 
 timer=setInterval(()=>{
 remain--;
@@ -155,83 +134,71 @@ document.getElementById("timer").innerText=remain;
 if(remain<=0){
 clearInterval(timer);
 life--;
-result.innerHTML='<span style="color:orange">⏰ 시간 초과!</span>';
 updateUI();
-
 if(life<=0) return gameOver();
-
 setTimeout(newProblem,1000);
 }
 
 },1000);
-
 }
 
-/* ================= 문제 생성 ================= */
+/* ================= 수학 ================= */
+
+function gcd(a,b){
+a=Math.abs(a); b=Math.abs(b);
+while(b){let t=a%b; a=b; b=t;}
+return a;
+}
+
+function randomFraction(range){
+let n=Math.floor(Math.random()*range*2)-range;
+let d=Math.floor(Math.random()*range)+1;
+return [n,d];
+}
 
 function randomInteger(range){
 return [Math.floor(Math.random()*range)+1,1];
 }
 
-function randomFraction(range){
-let num=Math.floor(Math.random()*range*2)-range;
-let den=Math.floor(Math.random()*range)+1;
-if(den===0) den=1;
-return [num,den];
-}
+/* ================= 유리수해 ================= */
 
-/* 혼합 root 생성 */
-function mixedRoot(range){
-
-let r1 = Math.random()<0.5 ? randomInteger(range) : randomFraction(range);
-let r2 = Math.random()<0.5 ? randomInteger(range) : randomFraction(range);
-
-return [r1,r2];
-}
-
-/* ================= 문제 ================= */
-
-function newProblem(){
-result.innerHTML="";
-
-if(Math.random()<0.5) integerMode();
-else rootMode();
-
-startTime=Date.now();
-startTimer();
-}
-
-/* ================= 유리수 해 모드 ================= */
-
-function integerMode(){
-
-mode.innerText="유리수해 모드";
+function fractionMode(){
 
 let range=getRange();
 
-let roots = mixedRoot(range);
-let r1=roots[0];
-let r2=roots[1];
-
-let b=-(r1[0]/r1[1] + r2[0]/r2[1]);
-let c=(r1[0]*r2[0])/(r1[1]*r2[1]);
+let r1=Math.random()<0.5?randomInteger(range):randomFraction(range);
+let r2=Math.random()<0.5?randomInteger(range):randomFraction(range);
 
 answer=[r1,r2];
 
-problem.innerHTML=`
-x² ${b>=0?"+":""}${b}x + ${c}=0
-<br><br>
+function render(id,val){
+let v=val[0]/val[1];
 
-x = <input id="x1"> , <input id="x2">
+if(val[1]===1){
+return `<input id="${id}">`;
+}else{
+return `
+<div>
+<input id="${id}n"> / <input id="${id}d">
+</div>
+`;
+}
+}
+
+document.getElementById("problem").innerHTML=`
+x² = ...
+<br><br>
+x =
+${render("x1",r1)}
+,
+${render("x2",r2)}
 `;
 }
 
 /* ================= 근의 공식 ================= */
 
 function simplifyRoot(n){
-let out=1;
-let inside=n;
-
+let out=1, inside=n;
 for(let i=2;i*i<=inside;i++){
 while(inside%(i*i)==0){
 out*=i;
@@ -243,8 +210,6 @@ return [out,inside];
 
 function rootMode(){
 
-mode.innerText="근의 공식 모드";
-
 let range=getRange();
 
 let a,b,c,D;
@@ -255,7 +220,6 @@ b=Math.floor(Math.random()*range*4)-(range*2);
 c=Math.floor(Math.random()*range)+1;
 
 D=b*b-4*a*c;
-
 if(D>0 && Math.sqrt(D)%1!==0) break;
 }
 
@@ -272,23 +236,31 @@ f=D;
 }
 
 let temp=simplifyRoot(f);
-let out=temp[0];
-let inside=temp[1];
 
-answer=[d,e,out,inside];
+answer=[d,e,temp[0],temp[1]];
 
-problem.innerHTML=`
-${a==1?"":a}x² ${b>=0?"+":""}${b}x + ${c}=0
-<br><br>
-
-<div class="fraction">
-<div>
+if(d==1){
+document.getElementById("problem").innerHTML=`
 x = <input id="eBox"> ± √<input id="inBox">
-</div>
-<div class="line"></div>
-<input id="dBox">
-</div>
 `;
+}else{
+document.getElementById("problem").innerHTML=`
+x = <input id="eBox"> ± √<input id="inBox">
+<br>
+———
+<input id="dBox">
+`;
+}
+}
+
+/* ================= 문제 ================= */
+
+function newProblem(){
+if(Math.random()<0.5) fractionMode();
+else rootMode();
+
+startTime=Date.now();
+startTimer();
 }
 
 /* ================= 채점 ================= */
@@ -297,63 +269,60 @@ function submitAnswer(){
 
 clearInterval(timer);
 
-let t=Math.floor((Date.now()-startTime)/1000);
-let gain=20-t;
-if(gain<1) gain=1;
+let gain=Math.max(1,20-Math.floor((Date.now()-startTime)/1000));
 
-if(mode.innerText=="유리수해 모드"){
+if(document.getElementById("x1n")){
 
-let x1=Number(document.getElementById("x1").value);
-let x2=Number(document.getElementById("x2").value);
+// 분수 모드
+function read(id){
+let n=document.getElementById(id+"n");
+let d=document.getElementById(id+"d");
+
+if(!d) return Number(n.value);
+
+return Number(n.value)/Number(d.value);
+}
+
+let x1=read("x1");
+let x2=read("x2");
 
 let r1=answer[0][0]/answer[0][1];
 let r2=answer[1][0]/answer[1][1];
 
-let correct=
-(x1===r1 && x2===r2) ||
-(x1===r2 && x2===r1);
-
-if(correct){
+if((x1==r1 && x2==r2)||(x1==r2 && x2==r1)){
 score+=gain;
-result.innerHTML='<span style="color:#22c55e">⭕ 정답!</span>';
 }else{
 life--;
-result.innerHTML='<span style="color:red">❌ 오답!</span>';
 }
 
 }else{
 
-let d=Number(document.getElementById("dBox").value);
+// 근의 공식
 let e=Number(document.getElementById("eBox").value);
-let inside=Number(document.getElementById("inBox").value);
+let inb=Number(document.getElementById("inBox").value);
 
-let ok =
-d==answer[0] &&
-e==answer[1] &&
-inside==answer[3];
+let d = document.getElementById("dBox")
+? Number(document.getElementById("dBox").value)
+: 1;
 
-if(오케이){
+if(d==answer[0] && e==answer[1] && inb==answer[3]){
 score+=gain;
-result.innerHTML='<span style="color:#22c55e">⭕ 정답!</span>';
 }else{
 life--;
-result.innerHTML='<span style="color:red">❌ 오답!</span>';
 }
 }
 
 updateUI();
 
 if(life<=0) return gameOver();
-
 setTimeout(newProblem,1000);
 }
 
-/* ================= 게임 오버 ================= */
+/* ================= 게임오버 ================= */
 
 function gameOver(){
-alert("게임 종료\n최종 점수: " + score);
-score=0;
-life=3;
+alert("게임 종료! 점수: "+score);
+score=0; life=3;
 updateUI();
 newProblem();
 }
