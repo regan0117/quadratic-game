@@ -24,7 +24,9 @@ border-radius:30px;
 margin-top:20px;
 }
 
-h1{font-size:55px;}
+h1{
+font-size:55px;
+}
 
 #problem{
 font-size:50px;
@@ -32,12 +34,18 @@ margin:35px;
 line-height:1.8;
 }
 
-#mode{font-size:35px;}
+#mode{
+font-size:35px;
+}
 
 #timer{
 font-size:60px;
 color:yellow;
 margin:20px;
+}
+
+.info{
+font-size:35px;
 }
 
 input{
@@ -59,8 +67,22 @@ cursor:pointer;
 margin-top:25px;
 }
 
+.fraction{
+display:flex;
+flex-direction:column;
+align-items:center;
+font-size:42px;
+}
+
+.line{
+width:550px;
+border-top:4px solid white;
+margin:10px;
+}
+
 #result{
 font-size:60px;
+font-weight:bold;
 margin-top:25px;
 height:80px;
 }
@@ -73,15 +95,23 @@ height:80px;
 
 <div class="card">
 
-<div>점수: <span id="score">0</span></div>
-<div>목숨: <span id="life">3</span></div>
+<div class="info">
+점수 : <span id="score">0</span>
+</div>
 
-<div id="timer">20</div>
+<div class="info">
+목숨 : <span id="life">3</span>
+</div>
+
+<div id="timer">15</div>
 
 <h2 id="mode"></h2>
+
 <div id="problem"></div>
 
-<button onclick="submitAnswer()">제출</button>
+<button onclick="submitAnswer()">
+제출
+</button>
 
 <div id="result"></div>
 
@@ -92,205 +122,474 @@ height:80px;
 let score=0;
 let life=3;
 let answer=[];
+
+let remain=15;
 let timer;
 let startTime;
 
-/* ================= 공통 ================= */
+let scoreText=document.getElementById("score");
+let lifeText=document.getElementById("life");
+let mode=document.getElementById("mode");
+let problem=document.getElementById("problem");
+let result=document.getElementById("result");
 
 function updateUI(){
-document.getElementById("score").innerText=score;
-document.getElementById("life").innerText=life;
+scoreText.innerText=score;
+lifeText.innerText=life;
+}
+
+function getIntegerRange(){
+
+if(score<30)return 5;
+if(score<60)return 10;
+if(score<100)return 20;
+
+return 30;
+
+}
+
+function getRootRange(){
+
+if(score<30)return 4;
+if(score<60)return 6;
+if(score<100)return 8;
+if(score<150)return 10;
+
+return 12;
+
+}
+
+function simplifyRoot(n){
+
+let out=1;
+let inside=n;
+
+for(let i=2;i*i<=inside;i++){
+
+while(
+inside%(i*i)==0
+){
+
+out*=i;
+inside/=i*i;
+
+}
+
+}
+
+return [out,inside];
+
 }
 
 function startTimer(){
+
 clearInterval(timer);
-let t=20;
+
+remain=15;
 
 timer=setInterval(()=>{
-t--;
-document.getElementById("timer").innerText=t;
 
-if(t<=0){
+remain--;
+
+timer.innerText=remain;
+
+document.getElementById(
+"timer"
+).innerText=remain;
+
+if(remain<=0){
+
 clearInterval(timer);
+
 life--;
-if(life<=0) return gameOver();
-newProblem();
+
+result.innerHTML=
+'<span style="color:orange">⏰ 시간 초과!</span>';
+
+updateUI();
+
+if(life<=0){
+
+gameOver();
+return;
+
+}
+
+setTimeout(
+newProblem,
+1000
+);
+
 }
 
 },1000);
+
 }
 
-/* ================= 정수해 (원본 유지 구조) ================= */
+function newProblem(){
+
+result.innerHTML="";
+
+if(Math.random()<0.5)
+
+integerMode();
+
+else
+
+rootMode();
+
+startTime=
+Date.now();
+
+startTimer();
+
+}
 
 function integerMode(){
 
-document.getElementById("mode").innerText="정수해";
+mode.innerText=
+"정수해 모드";
 
-let r1=Math.floor(Math.random()*10)+1;
-let r2=Math.floor(Math.random()*10)+1;
+let range=
+getIntegerRange();
+
+let r1=
+Math.floor(
+Math.random()*range
+)+1;
+
+let r2;
+
+if(Math.random()<0.2){
+
+r2=r1;
+
+}else{
+
+r2=
+Math.floor(
+Math.random()*range
+)+1;
+
+}
 
 let b=-(r1+r2);
 let c=r1*r2;
 
 answer=[r1,r2];
 
-setProblem(`
-x² ${b>=0?"+":""}${b}x ${c>=0?"+":""}${c}=0
-<br><br>
-x = <input id="a">
-`);
-}
+if(r1==r2){
 
-/* ================= 유리수해 (새로 분리, 침범 없음) ================= */
+problem.innerHTML=
+`
 
-function rationalMode(){
+x²
+${b>=0?"+":""}${b}x
++${c}=0
 
-document.getElementById("mode").innerText="유리수해";
-
-let n1=Math.floor(Math.random()*10)+1;
-let d1=Math.floor(Math.random()*5)+1;
-
-let n2=Math.floor(Math.random()*10)+1;
-let d2=Math.floor(Math.random()*5)+1;
-
-/* 해 저장 */
-answer=[[n1,d1],[n2,d2]];
-
-/* 계수 계산 (정수 유지) */
-let v1=n1/d1;
-let v2=n2/d2;
-
-let lcm=d1*d2;
-
-let b=-(v1+v2)*lcm;
-let c=(v1*v2)*lcm;
-
-b=Math.round(b);
-c=Math.round(c);
-
-setProblem(`
-x² ${b>=0?"+":""}${b}x ${c>=0?"+":""}${c}=0
 <br><br>
 
-x =
-<div>
-<input id="n1"> / <input id="d1">
-,
-<input id="n2"> / <input id="d2">
-</div>
-`);
+(중근)
+
+<br><br>
+
+<input id="x1">
+
+`;
+
+}else{
+
+problem.innerHTML=
+`
+
+x²
+${b>=0?"+":""}${b}x
++${c}=0
+
+<br><br>
+
+<input id="x1">
+<input id="x2">
+
+`;
+
 }
 
-/* ================= 근의 공식 (절대 유지) ================= */
+}
 
 function rootMode(){
 
-document.getElementById("mode").innerText="근의 공식";
+mode.innerText=
+"근의 공식 모드";
 
 let a,b,c,D;
-let range=5;
+
+let range=
+getRootRange();
 
 while(true){
-a=Math.floor(Math.random()*range)+1;
-b=Math.floor(Math.random()*20)-10;
-c=Math.floor(Math.random()*range)+1;
+
+a=
+Math.floor(Math.random()*range)+1;
+
+b=
+Math.floor(
+Math.random()*(range*4)
+)-(range*2);
+
+c=
+Math.floor(Math.random()*range)+1;
 
 D=b*b-4*a*c;
 
-if(D>0 && Math.sqrt(D)%1!==0) break;
+let root=Math.sqrt(D);
+
+if(
+D>0
+&&
+root!=Math.floor(root)
+)break;
+
 }
 
-setProblem(`
-${a}x² ${b>=0?"+":""}${b}x ${c>=0?"+":""}${c}=0
+let d,e,f;
+
+if(b%2==0){
+
+d=a;
+e=-b/2;
+f=D/4;
+
+}else{
+
+d=2*a;
+e=-b;
+f=D;
+
+}
+
+let temp=simplifyRoot(f);
+
+let out=temp[0];
+let inside=temp[1];
+
+answer=[d,e,out,inside];
+
+problem.innerHTML=
+`
+
+${a==1?"":a}x²
+${b>=0?"+":""}${b}x
++${c}=0
+
 <br><br>
 
-x =
-<input>
-± √<input>
-———
-<input>
-`);
+${
+d==1?
 
-answer=["root"];
+`
+<div>
+
+x=
+<input id="eBox">
+
+±
+
+${
+out==1
+?
+`√ <input id="inBox">`
+:
+`<input id="outBox"> √ <input id="inBox">`
 }
 
-/* ================= 공통 출력 함수 (핵심 안정장치) ================= */
+</div>
+`
 
-function setProblem(html){
-document.getElementById("problem").innerHTML=html;
+:
+
+`
+
+<div class="fraction">
+
+<div>
+
+x=
+<input id="eBox">
+
+±
+
+${
+out==1
+?
+`√ <input id="inBox">`
+:
+`<input id="outBox"> √ <input id="inBox">`
 }
 
-/* ================= 문제 생성 ================= */
+</div>
 
-function newProblem(){
+<div class="line"></div>
 
-document.getElementById("result").innerText="";
+<input id="dBox">
 
-let r=Math.random();
+</div>
 
-if(r<0.33) integerMode();
-else if(r<0.66) rationalMode();
-else rootMode();
-
-startTime=Date.now();
-startTimer();
+`
 }
 
-/* ================= 채점 ================= */
+`;
+
+}
 
 function submitAnswer(){
 
 clearInterval(timer);
 
-if(document.getElementById("mode").innerText.includes("정수")){
+let t=
+Math.floor(
+(Date.now()-startTime)/1000
+);
 
-let a=Number(document.getElementById("a").value);
+let gain=15-t;
 
-if(a==answer[0] || a==answer[1]){
-score+=10;
-document.getElementById("result").innerText="⭕ 정답";
-}else{
-life--;
-document.getElementById("result").innerText="❌ 오답";
-}
+if(gain<1)
+gain=1;
 
-}else if(document.getElementById("mode").innerText.includes("유리수")){
-
-let n1=Number(document.getElementById("n1").value);
-let d1=Number(document.getElementById("d1").value);
-let n2=Number(document.getElementById("n2").value);
-let d2=Number(document.getElementById("d2").value);
-
-let r1=answer[0];
-let r2=answer[1];
+if(mode.innerText=="정수해 모드"){
 
 if(
-n1==r1[0] && d1==r1[1] &&
-n2==r2[0] && d2==r2[1]
+x1.value==""
+||
+(document.getElementById("x2")
+&&x2.value=="")
 ){
-score+=10;
-document.getElementById("result").innerText="⭕ 정답";
+
+result.innerText=
+"빈칸 입력";
+
+startTimer();
+return;
+
+}
+
+let a=Number(x1.value);
+
+let b=
+document.getElementById("x2")
+?
+Number(x2.value)
+:
+a;
+
+if(
+
+(a==answer[0]
+&&
+b==answer[1])
+
+||
+
+(a==answer[1]
+&&
+b==answer[0])
+
+){
+
+score+=gain;
+
+result.innerHTML=
+'<span style="color:#22c55e">⭕ 정답!</span>';
+
 }else{
+
 life--;
-document.getElementById("result").innerText="❌ 오답";
+
+result.innerHTML=
+'<span style="color:red">❌ 오답!</span>';
+
+}
+
+}else{
+
+let out;
+
+if(answer[2]==1){
+
+out=1;
+
+}else{
+
+out=
+Number(outBox.value);
+
+}
+
+let d=
+document.getElementById("dBox")
+?
+Number(dBox.value)
+:1;
+
+let e=Number(eBox.value);
+let inside=Number(inBox.value);
+
+if(
+d==answer[0]
+&&
+e==answer[1]
+&&
+out==answer[2]
+&&
+inside==answer[3]
+){
+
+score+=gain;
+
+result.innerHTML=
+'<span style="color:#22c55e">⭕ 정답!</span>';
+
+}else{
+
+life--;
+
+result.innerHTML=
+'<span style="color:red">❌ 오답!</span>';
+
 }
 
 }
 
 updateUI();
 
-if(life<=0) return gameOver();
-setTimeout(newProblem,1000);
+if(life<=0){
+
+gameOver();
+return;
+
 }
 
-/* ================= 종료 ================= */
+setTimeout(
+newProblem,
+1000
+);
+
+}
 
 function gameOver(){
-alert("게임 종료! 점수: "+score);
+
+alert(
+"게임 종료\n최종 점수:"
++score
+);
+
 score=0;
 life=3;
+
 updateUI();
+
 newProblem();
+
 }
 
 newProblem();
