@@ -5,7 +5,6 @@
 <title>이차방정식 게임</title>
 
 <style>
-
 body{
 background:#0f172a;
 color:white;
@@ -87,7 +86,6 @@ font-weight:bold;
 margin-top:25px;
 height:80px;
 }
-
 </style>
 </head>
 
@@ -136,10 +134,8 @@ let problem=document.getElementById("problem");
 let result=document.getElementById("result");
 
 function updateUI(){
-
 scoreText.innerText=score;
 lifeText.innerText=life;
-
 }
 
 function getIntegerRange(){
@@ -175,7 +171,6 @@ inside%(i*i)==0
 ){
 
 out*=i;
-
 inside/=i*i;
 
 }
@@ -192,13 +187,11 @@ clearInterval(timer);
 
 remain=15;
 
-document.getElementById(
-"timer"
-).innerText=remain;
-
 timer=setInterval(()=>{
 
 remain--;
+
+timer.innerText=remain;
 
 document.getElementById(
 "timer"
@@ -265,16 +258,46 @@ Math.floor(
 Math.random()*range
 )+1;
 
-let r2=
+let r2;
+
+if(Math.random()<0.2){
+
+r2=r1;
+
+}else{
+
+r2=
 Math.floor(
 Math.random()*range
 )+1;
 
-let b=-(r1+r2);
+}
 
+let b=-(r1+r2);
 let c=r1*r2;
 
 answer=[r1,r2];
+
+if(r1==r2){
+
+problem.innerHTML=
+`
+
+x²
+${b>=0?"+":""}${b}x
++${c}=0
+
+<br><br>
+
+(중근)
+
+<br><br>
+
+<input id="x1">
+
+`;
+
+}else{
 
 problem.innerHTML=
 `
@@ -292,6 +315,8 @@ ${b>=0?"+":""}${b}x
 
 }
 
+}
+
 function rootMode(){
 
 mode.innerText=
@@ -305,34 +330,25 @@ getRootRange();
 while(true){
 
 a=
-Math.floor(
-Math.random()*range
-)+1;
+Math.floor(Math.random()*range)+1;
 
 b=
 Math.floor(
-Math.random()*
-(range*4)
-)
--(range*2);
+Math.random()*(range*4)
+)-(range*2);
 
 c=
-Math.floor(
-Math.random()*range
-)+1;
+Math.floor(Math.random()*range)+1;
 
-D=
-b*b-4*a*c;
+D=b*b-4*a*c;
 
-let root=
-Math.sqrt(D);
+let root=Math.sqrt(D);
 
 if(
 D>0
 &&
 root!=Math.floor(root)
-)
-break;
+)break;
 
 }
 
@@ -344,8 +360,7 @@ d=a;
 e=-b/2;
 f=D/4;
 
-}
-else{
+}else{
 
 d=2*a;
 e=-b;
@@ -353,18 +368,12 @@ f=D;
 
 }
 
-let temp=
-simplifyRoot(f);
+let temp=simplifyRoot(f);
 
 let out=temp[0];
 let inside=temp[1];
 
-answer=[
-d,
-e,
-out,
-inside
-];
+answer=[d,e,out,inside];
 
 problem.innerHTML=
 `
@@ -376,16 +385,12 @@ ${b>=0?"+":""}${b}x
 <br><br>
 
 ${
-d==1
-
-?
+d==1?
 
 `
-
 <div>
 
 x=
-
 <input id="eBox">
 
 ±
@@ -399,7 +404,6 @@ out==1
 }
 
 </div>
-
 `
 
 :
@@ -411,7 +415,6 @@ out==1
 <div>
 
 x=
-
 <input id="eBox">
 
 ±
@@ -433,7 +436,6 @@ out==1
 </div>
 
 `
-
 }
 
 `;
@@ -446,12 +448,10 @@ clearInterval(timer);
 
 let t=
 Math.floor(
-(Date.now()-startTime)
-/1000
+(Date.now()-startTime)/1000
 );
 
-let gain=
-15-t;
+let gain=15-t;
 
 if(gain<1)
 gain=1;
@@ -461,20 +461,26 @@ if(mode.innerText=="정수해 모드"){
 if(
 x1.value==""
 ||
-x2.value==""
+(document.getElementById("x2")
+&&x2.value=="")
 ){
 
 result.innerText=
-"빈칸을 입력하세요";
+"빈칸 입력";
 
 startTimer();
-
 return;
 
 }
 
 let a=Number(x1.value);
-let b=Number(x2.value);
+
+let b=
+document.getElementById("x2")
+?
+Number(x2.value)
+:
+a;
 
 if(
 
@@ -493,9 +499,7 @@ b==answer[0])
 score+=gain;
 
 result.innerHTML=
-'<span style="color:#22c55e">⭕ 정답! +'
-+gain+
-'점</span>';
+'<span style="color:#22c55e">⭕ 정답!</span>';
 
 }else{
 
@@ -516,28 +520,21 @@ out=1;
 
 }else{
 
-if(outBox.value==""){
-
-result.innerText=
-"빈칸을 입력하세요";
-
-startTimer();
-
-return;
-
-}
-
 out=
 Number(outBox.value);
 
 }
 
-let d=dBox ? Number(dBox.value):1;
+let d=
+document.getElementById("dBox")
+?
+Number(dBox.value)
+:1;
+
 let e=Number(eBox.value);
 let inside=Number(inBox.value);
 
 if(
-
 d==answer[0]
 &&
 e==answer[1]
@@ -545,15 +542,12 @@ e==answer[1]
 out==answer[2]
 &&
 inside==answer[3]
-
 ){
 
 score+=gain;
 
 result.innerHTML=
-'<span style="color:#22c55e">⭕ 정답! +'
-+gain+
-'점</span>';
+'<span style="color:#22c55e">⭕ 정답!</span>';
 
 }else{
 
@@ -585,7 +579,7 @@ newProblem,
 function gameOver(){
 
 alert(
-"게임 종료\n최종 점수 : "
+"게임 종료\n최종 점수:"
 +score
 );
 
