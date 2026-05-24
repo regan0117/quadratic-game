@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Quadratic Game</title>
+
+<style>
+body{
+background:#0f172a;
+color:white;
+font-family:Arial;
+text-align:center;
+margin:0;
+padding:20px;
+}
+
+.card{
+background:#1e293b;
+max-width:800px;
+margin:auto;
+padding:25px;
+border-radius:20px;
+}
+
+#problem{
+font-size:30px;
+margin:25px;
+}
+
+input{
+width:55px;
+padding:10px;
+font-size:22px;
+text-align:center;
+border-radius:10px;
+border:none;
+margin:3px;
+}
+
+#timer{
+font-size:30px;
+color:yellow;
+}
+
+button{
+padding:12px 25px;
+font-size:20px;
+border:none;
+border-radius:10px;
+margin-top:15px;
+}
+
+.fraction{
+display:flex;
+flex-direction:column;
+align-items:center;
+font-size:28px;
+}
+
+.line{
+width:320px;
+border-top:3px solid white;
+margin:8px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🎮 QUADRATIC GAME</h1>
+
+<div class="card">
+
+<div>Score: <span id="score">0</span></div>
+<div>Life: <span id="life">3</span></div>
+
+<div id="timer">10</div>
+
+<h2 id="mode"></h2>
+
+<div id="problem"></div>
+
+<button onclick="submitAnswer()">
+Submit
+</button>
+
+<div id="result"></div>
+
+</div>
+
+<script>
+
+let score=0;
+let life=3;
+
+let answer=[];
+
+let remain=10;
+let timer;
+
+let startTime;
+
+let scoreText=
+document.getElementById("score");
+
+let lifeText=
+document.getElementById("life");
+
+let mode=
+document.getElementById("mode");
+
+let problem=
+document.getElementById("problem");
+
+let result=
+document.getElementById("result");
+
+function updateUI(){
+
+scoreText.innerText=score;
+lifeText.innerText=life;
+
+}
+
+function getRange(){
+
+if(score<30)
+return 5;
+
+if(score<60)
+return 10;
+
+if(score<100)
+return 20;
+
+return 30;
+
+}
+
+function simplifyRoot(n){
+
+let out=1;
+let inside=n;
+
+for(let i=2;i*i<=inside;i++){
+
+while(inside%(i*i)==0){
+
+out*=i;
+
+inside/=(i*i);
+
+}
+
+}
+
+return [out,inside];
+
+}
+
+function startTimer(){
+
+clearInterval(timer);
+
+remain=10;
+
+document
+.getElementById("timer")
+.innerText=remain;
+
+timer=setInterval(()=>{
+
+remain--;
+
+document
+.getElementById("timer")
+.innerText=
+remain;
+
+if(remain<=0){
+
+clearInterval(timer);
+
+life--;
+
+result.innerText=
+"TIME OVER";
+
+updateUI();
+
+if(life<=0){
+
+gameOver();
+
+return;
+
+}
+
+setTimeout(
+newProblem,
+1000
+);
+
+}
+
+},1000);
+
+}
+
+function newProblem(){
+
+result.innerText="";
+
+startTime=
+Date.now();
+
+if(Math.random()<0.5)
+integerMode();
+
+else
+rootMode();
+
+startTimer();
+
+}
+
+function integerMode(){
+
+mode.innerText=
+"INTEGER MODE";
+
+let range=
+getRange();
+
+let r1=
+Math.floor(
+Math.random()*range
+)+1;
+
+let r2=
+Math.floor(
+Math.random()*range
+)+1;
+
+let b=-(r1+r2);
+
+let c=r1*r2;
+
+answer=[r1,r2];
+
+problem.innerHTML=
+`
+x²
+${b>=0?"+":""}${b}x
++${c}=0
+
+<br><br>
+
+<input id=x1>
+
+<input id=x2>
+`;
+
+}
+
+function rootMode(){
+
+mode.innerText=
+"ROOT MODE";
+
+let a,b,c,D;
+
+let range=
+getRange();
+
+while(true){
+
+a=
+Math.floor(
+Math.random()*range
+)+1;
+
+b=
+Math.floor(
+Math.random()*
+(range*4)
+)
+-(range*2);
+
+c=
+Math.floor(
+Math.random()*range
+)+1;
+
+D=
+b*b-4*a*c;
+
+let root=
+Math.sqrt(D);
+
+if(
+D>0 &&
+root!=
+Math.floor(root)
+)
+break;
+
+}
+
+let d,e,f;
+
+if(b%2==0){
+
+d=a;
+
+e=-b/2;
+
+f=D/4;
+
+}
+else{
+
+d=2*a;
+
+e=-b;
+
+f=D;
+
+}
+
+let temp=
+simplifyRoot(f);
+
+let out=temp[0];
+
+let inside=
+temp[1];
+
+answer=[
+d,
+e,
+out,
+inside
+];
+
+problem.innerHTML=
+`
+
+${a}x²
+${b>=0?"+":""}${b}x
++${c}=0
+
+<br><br>
+
+<div class=fraction>
+
+<div>
+
+x=
+
+<input id=eBox>
+
+±
+
+<input id=outBox>
+
+√
+
+<input id=inBox>
+
+</div>
+
+<div class=line></div>
+
+<input id=dBox>
+
+</div>
+
+`;
+
+}
+
+function submitAnswer(){
+
+clearInterval(timer);
+
+let t=
+Math.floor(
+(Date.now()-startTime)
+/1000
+);
+
+let gain=
+10-t;
+
+if(gain<1)
+gain=1;
+
+if(
+mode.innerText==
+"INTEGER MODE"
+){
+
+let x1=
+Number(
+x1.value
+);
+
+let x2=
+Number(
+x2.value
+);
+
+if(
+(x1==
+answer[0]
+&&
+x2==
+answer[1]
+)
+
+||
+
+(x1==
+answer[1]
+&&
+x2==
+answer[0]
+)
+){
+
+score+=gain;
+
+result.innerText=
+"CORRECT +"
++gain;
+
+}
+else{
+
+life--;
+
+result.innerText=
+"WRONG";
+
+}
+
+}
+
+else{
+
+let d=
+Number(
+dBox.value
+);
+
+let e=
+Number(
+eBox.value
+);
+
+let out=
+Number(
+outBox.value
+);
+
+let inside=
+Number(
+inBox.value
+);
+
+if(
+
+d==
+answer[0]
+
+&&
+
+e==
+answer[1]
+
+&&
+
+out==
+answer[2]
+
+&&
+
+inside==
+answer[3]
+
+){
+
+score+=gain;
+
+result.innerText=
+"CORRECT +"
++gain;
+
+}
+else{
+
+life--;
+
+result.innerText=
+"WRONG";
+
+}
+
+}
+
+updateUI();
+
+if(life<=0){
+
+gameOver();
+
+return;
+
+}
+
+setTimeout(
+newProblem,
+1000);
+
+}
+
+function gameOver(){
+
+alert(
+"GAME OVER\nScore: "
++score
+);
+
+score=0;
+life=3;
+
+updateUI();
+
+newProblem();
+
+}
+
+newProblem();
+
+</script>
+
+</body>
+</html>
