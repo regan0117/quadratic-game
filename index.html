@@ -225,7 +225,7 @@ problem.innerHTML=
 }
 
 /* ================= 근의 공식 모드 ================= */
-function rootMode(){
+ function rootMode(){
 
 mode.innerText="근의 공식 모드";
 
@@ -238,34 +238,30 @@ b=Math.floor(Math.random()*(range*4))-(range*2);
 c=Math.floor(Math.random()*range)+1;
 
 D=b*b-4*a*c;
-
 let root=Math.sqrt(D);
 
 if(D>0 && root!==Math.floor(root)) break;
 }
 
-let d,e,f;
-
-if(b%2==0){
-d=a;
-e=-b/2;
-f=D/4;
-}else{
-d=2*a;
-e=-b;
-f=D;
-}
-
-let temp=simplifyRoot(f);
+let d=a*2;
+let e=-b;
+let temp=simplifyRoot(D);
 
 answer=[d,e,temp[0],temp[1]];
 
 problem.innerHTML=
-`${a==1?"":a}x² ${b>=0?"+":""}${b}x +${c}=0<br><br>
-(근의 공식 모드 문제)
+`
+${a==1?"":a}x² ${b>=0?"+":""}${b}x +${c}=0
+<br><br>
+
+x =
+<input id="eBox">
+
+± √(<input id="inBox">)
+/
+<input id="dBox">
 `;
 }
-
 /* ================= 제출 ================= */
 function submitAnswer(){
 
@@ -284,9 +280,20 @@ life--;
 result.innerHTML="❌ 오답!";
 }
 
+} else{
+
+let e = Number(document.getElementById("eBox").value);
+let inside = Number(document.getElementById("inBox").value);
+let d = Number(document.getElementById("dBox").value);
+
+if(e==answer[1] && inside==answer[3] && d==answer[0]){
+score += 10;
+result.innerHTML="⭕ 정답!";
 }else{
 life--;
-result.innerHTML="근의 공식 모드 채점은 확장 가능";
+result.innerHTML="❌ 오답!";
+}
+
 }
 
 updateUI();
@@ -349,11 +356,7 @@ life=3;
 
 updateUI();
 newProblem();
-}
-  window.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("submitBtn")
-    .addEventListener("click", submitAnswer);
-});
+ 
   window.submitAnswer = submitAnswer;
 window.newProblem = newProblem;
 window.gameOver = gameOver;
