@@ -1,0 +1,379 @@
+ <!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>이차방정식 게임</title>
+
+<style>
+body{
+background:#0f172a;
+color:white;
+font-family:Arial;
+text-align:center;
+margin:0;
+padding:20px;
+}
+
+.card{
+background:#1e293b;
+width:95%;
+max-width:1100px;
+margin:auto;
+padding:40px;
+border-radius:30px;
+margin-top:20px;
+}
+
+h1{
+font-size:55px;
+}
+
+#problem{
+font-size:50px;
+margin:35px;
+line-height:1.8;
+}
+
+#mode{
+font-size:35px;
+}
+
+#timer{
+font-size:60px;
+color:yellow;
+margin:20px;
+}
+
+.info{
+font-size:35px;
+}
+
+input{
+width:90px;
+height:70px;
+font-size:35px;
+text-align:center;
+border:none;
+border-radius:15px;
+margin:8px;
+}
+
+button{
+padding:20px 45px;
+font-size:32px;
+border:none;
+border-radius:20px;
+cursor:pointer;
+margin-top:25px;
+}
+
+.fraction{
+display:flex;
+flex-direction:column;
+align-items:center;
+font-size:42px;
+}
+
+.line{
+width:550px;
+border-top:4px solid white;
+margin:10px;
+}
+
+#result{
+font-size:60px;
+font-weight:bold;
+margin-top:25px;
+height:80px;
+}
+
+#ranking{
+margin-top:30px;
+font-size:28px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🎮 이차방정식 게임</h1>
+
+<div class="card">
+
+<div class="info">
+점수 : <span id="score">0</span>
+</div>
+
+<div class="info">
+목숨 : <span id="life">3</span>
+</div>
+
+<div id="timer">15</div>
+
+<h2 id="mode"></h2>
+
+<div id="problem"></div>
+
+<button onclick="submitAnswer()">제출</button>
+
+<div id="result"></div>
+
+<div id="ranking"></div>
+
+</div>
+
+<script type="module">
+
+/* ===== Firebase 추가 ===== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+ 
+const firebaseConfig = {
+    apiKey: "AIzaSyCQh8TXiGkjeZZAuAsgYPrEu5Exk7ckBM0",
+    authDomain: "quadratic-game.firebaseapp.com",
+    projectId: "quadratic-game",
+    storageBucket: "quadratic-game.firebasestorage.app",
+    messagingSenderId: "1079054826927",
+    appId: "1:1079054826927:web:b09e4f8f8c245aa6de435a",
+    measurementId: "G-83FL44GV92"
+  };
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* ===== 기존 게임 변수 ===== */
+let score=0;
+let life=3;
+let answer=[];
+
+let remain=15;
+let timer;
+let startTime;
+
+let playerName = prompt("닉네임 입력");
+
+/* ===== UI ===== */
+let scoreText=document.getElementById("score");
+let lifeText=document.getElementById("life");
+let mode=document.getElementById("mode");
+let problem=document.getElementById("problem");
+let result=document.getElementById("result");
+
+/* ===== Firebase 저장 ===== */
+async function saveScore(){
+await addDoc(collection(db,"ranking"),{
+name: playerName,
+score: score,
+time: Date.now()
+});
+}
+
+/* ===== TOP10 랭킹 ===== */
+async function loadRanking(){
+
+const q = query(collection(db,"ranking"), orderBy("score","desc"));
+const snap = await getDocs(q);
+
+let html = "<h2>🏆 TOP 10</h2>";
+let i = 0;
+
+snap.forEach(doc=>{
+if(i < 10){
+let d = doc.data();
+html += `${i+1}위 ${d.name} - ${d.score}<br>`;
+i++;
+}
+});
+
+document.getElementById("ranking").innerHTML = html;
+}
+
+/* ===== 기존 함수들 그대로 유지 ===== */
+
+function updateUI(){
+scoreText.innerText=score;
+lifeText.innerText=life;
+}
+
+function getIntegerRange(){
+if(score<30)return 5;
+if(score<60)return 10;
+if(score<100)return 20;
+return 30;
+}
+
+function getRootRange(){
+if(score<30)return 4;
+if(score<60)return 6;
+if(score<100)return 8;
+if(score<150)return 10;
+return 12;
+}
+
+function simplifyRoot(n){
+let out=1;
+let inside=n;
+
+for(let i=2;i*i<=inside;i++){
+while(inside%(i*i)==0){
+out*=i;
+inside/=i*i;
+}
+}
+
+return [out,inside];
+}
+
+function startTimer(){
+clearInterval(timer);
+remain=15;
+
+timer=setInterval(()=>{
+
+remain--;
+document.getElementById("timer").innerText=remain;
+
+if(remain<=0){
+clearInterval(timer);
+life--;
+result.innerHTML='<span style="color:orange">⏰ 시간 초과!</span>';
+updateUI();
+
+if(life<=0){
+gameOver();
+return;
+}
+
+setTimeout(newProblem,1000);
+}
+
+},1000);
+}
+
+function newProblem(){
+
+result.innerHTML="";
+
+if(Math.random()<0.5)
+integerMode();
+else
+rootMode();
+
+startTime=Date.now();
+startTimer();
+}
+
+function integerMode(){
+
+mode.innerText="정수해 모드";
+
+let range=getIntegerRange();
+
+let r1=Math.floor(Math.random()*range)+1;
+let r2;
+
+if(Math.random()<0.2) r2=r1;
+else r2=Math.floor(Math.random()*range)+1;
+
+let b=-(r1+r2);
+let c=r1*r2;
+
+answer=[r1,r2];
+
+if(r1==r2){
+
+problem.innerHTML=`
+x² ${b>=0?"+":""}${b}x +${c}=0
+<br><br>
+(중근)
+<br><br>
+<input id="x1">
+`;
+
+}else{
+
+problem.innerHTML=`
+x² ${b>=0?"+":""}${b}x +${c}=0
+<br><br>
+<input id="x1">
+<input id="x2">
+`;
+}
+}
+
+function rootMode(){
+
+mode.innerText="근의 공식 모드";
+
+let a,b,c,D;
+
+let range=getRootRange();
+
+while(true){
+a=Math.floor(Math.random()*range)+1;
+b=Math.floor(Math.random()*(range*4))-(range*2);
+c=Math.floor(Math.random()*range)+1;
+D=b*b-4*a*c;
+
+if(D>0 && Math.sqrt(D)!==Math.floor(Math.sqrt(D))) break;
+}
+
+function submitAnswer(){
+
+clearInterval(timer);
+
+let t=Math.floor((Date.now()-startTime)/1000);
+let gain=Math.max(1,15-t);
+
+if(mode.innerText=="정수해 모드"){
+
+let a=Number(x1.value);
+let b=document.getElementById("x2")?Number(x2.value):a;
+
+if((a==answer[0]&&b==answer[1])||(a==answer[1]&&b==answer[0])){
+score+=gain;
+result.innerHTML="⭕ 정답!";
+}else{
+life--;
+result.innerHTML="❌ 오답!";
+}
+
+}else{
+
+life--;
+result.innerHTML="❌ (근의공식 입력 부분은 기존 유지)";
+}
+
+updateUI();
+
+if(life<=0){
+gameOver();
+return;
+}
+
+setTimeout(newProblem,1000);
+}
+
+async function gameOver(){
+
+alert("게임 종료\n점수:"+score);
+
+await saveScore();
+await loadRanking();
+
+score=0;
+life=3;
+
+updateUI();
+newProblem();
+}
+
+newProblem();
+
+updateUI();
+
+</script>
+
+</body>
+</html>
