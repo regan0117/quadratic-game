@@ -350,8 +350,16 @@ life=3;
 updateUI();
 newProblem();
 }
+  window.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("submitBtn")
+    .addEventListener("click", submitAnswer);
+});
+  window.submitAnswer = submitAnswer;
+window.newProblem = newProblem;
+window.gameOver = gameOver;
 document.getElementById("submitBtn")
   .addEventListener("click", submitAnswer);
+  
 /* ================= 시작 ================= */
 newProblem();
 updateUI();
