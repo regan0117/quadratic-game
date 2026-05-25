@@ -1,8 +1,8 @@
- <!DOCTYPE html>
+  <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>이차방정식 게임</title>
+<title>이차방정식 게임 + 랭킹</title>
 
 <style>
 body{
@@ -24,69 +24,36 @@ border-radius:30px;
 margin-top:20px;
 }
 
-h1{
-font-size:55px;
-}
+h1{font-size:50px;}
 
 #problem{
-font-size:50px;
-margin:35px;
-line-height:1.8;
-}
-
-#mode{
-font-size:35px;
+font-size:45px;
+margin:30px;
 }
 
 #timer{
-font-size:60px;
+font-size:50px;
 color:yellow;
-margin:20px;
-}
-
-.info{
-font-size:35px;
 }
 
 input{
-width:90px;
-height:70px;
-font-size:35px;
+font-size:30px;
+width:100px;
 text-align:center;
-border:none;
-border-radius:15px;
-margin:8px;
 }
 
 button{
-padding:20px 45px;
-font-size:32px;
-border:none;
-border-radius:20px;
-cursor:pointer;
-margin-top:25px;
+font-size:25px;
+padding:10px 20px;
+margin-top:20px;
 }
 
-.fraction{
-display:flex;
-flex-direction:column;
-align-items:center;
-font-size:42px;
-}
-
-.line{
-width:550px;
-border-top:4px solid white;
-margin:10px;
-}
-
-#result{
-font-size:60px;
-font-weight:bold;
-margin-top:25px;
-height:80px;
+#ranking{
+margin-top:30px;
+font-size:25px;
 }
 </style>
+
 </head>
 
 <body>
@@ -95,504 +62,150 @@ height:80px;
 
 <div class="card">
 
-<div class="info">
-점수 : <span id="score">0</span>
-</div>
+<div>점수: <span id="score">0</span></div>
+<div>목숨: <span id="life">3</span></div>
 
-<div class="info">
-목숨 : <span id="life">3</span>
-</div>
-
-<div id="timer">15</div>
+<div id="timer">20</div>
 
 <h2 id="mode"></h2>
-
 <div id="problem"></div>
 
-<button onclick="submitAnswer()">
-제출
-</button>
+<button onclick="submitAnswer()">제출</button>
 
 <div id="result"></div>
 
+<div id="ranking"></div>
+
 </div>
 
-<script>
+<script type="module">
 
-let score=0;
-let life=3;
-let answer=[];
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+ <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-let remain=15;
-let timer;
-let startTime;
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyCQh8TXiGkjeZZAuAsgYPrEu5Exk7ckBM0",
+    authDomain: "quadratic-game.firebaseapp.com",
+    projectId: "quadratic-game",
+    storageBucket: "quadratic-game.firebasestorage.app",
+    messagingSenderId: "1079054826927",
+    appId: "1:1079054826927:web:b09e4f8f8c245aa6de435a",
+    measurementId: "G-83FL44GV92"
+  };
 
-let scoreText=document.getElementById("score");
-let lifeText=document.getElementById("life");
-let mode=document.getElementById("mode");
-let problem=document.getElementById("problem");
-let result=document.getElementById("result");
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
+/* ===== 게임 변수 ===== */
+let score = 0;
+let life = 3;
+let answer = [];
+let playerName = prompt("닉네임 입력");
+
+/* ===== UI ===== */
 function updateUI(){
-scoreText.innerText=score;
-lifeText.innerText=life;
+document.getElementById("score").innerText = score;
+document.getElementById("life").innerText = life;
 }
 
-function getIntegerRange(){
-
-if(score<30)return 5;
-if(score<60)return 10;
-if(score<100)return 20;
-
-return 30;
-
-}
-
-function getRootRange(){
-
-if(score<30)return 4;
-if(score<60)return 6;
-if(score<100)return 8;
-if(score<150)return 10;
-
-return 12;
-
-}
-
-function simplifyRoot(n){
-
-let out=1;
-let inside=n;
-
-for(let i=2;i*i<=inside;i++){
-
-while(
-inside%(i*i)==0
-){
-
-out*=i;
-inside/=i*i;
-
-}
-
-}
-
-return [out,inside];
-
-}
-
-function startTimer(){
-
-clearInterval(timer);
-
-remain=15;
-
-timer=setInterval(()=>{
-
-remain--;
-
-timer.innerText=remain;
-
-document.getElementById(
-"timer"
-).innerText=remain;
-
-if(remain<=0){
-
-clearInterval(timer);
-
-life--;
-
-result.innerHTML=
-'<span style="color:orange">⏰ 시간 초과!</span>';
-
-updateUI();
-
-if(life<=0){
-
-gameOver();
-return;
-
-}
-
-setTimeout(
-newProblem,
-1000
-);
-
-}
-
-},1000);
-
-}
-
+/* ===== 문제 생성 ===== */
 function newProblem(){
 
-result.innerHTML="";
+let r1 = Math.floor(Math.random()*10)+1;
+let r2 = Math.floor(Math.random()*10)+1;
 
-if(Math.random()<0.5)
+let b = -(r1+r2);
+let c = r1*r2;
 
-integerMode();
+answer = [r1,r2];
 
-else
-
-rootMode();
-
-startTime=
-Date.now();
-
-startTimer();
-
-}
-
-function integerMode(){
-
-mode.innerText=
-"정수해 모드";
-
-let range=
-getIntegerRange();
-
-let r1=
-Math.floor(
-Math.random()*range
-)+1;
-
-let r2;
-
-if(Math.random()<0.2){
-
-r2=r1;
-
-}else{
-
-r2=
-Math.floor(
-Math.random()*range
-)+1;
-
-}
-
-let b=-(r1+r2);
-let c=r1*r2;
-
-answer=[r1,r2];
-
-if(r1==r2){
-
-problem.innerHTML=
-`
-
-x²
-${b>=0?"+":""}${b}x
-+${c}=0
-
+document.getElementById("problem").innerHTML =
+`x² ${b>=0?"+":""}${b}x ${c>=0?"+":""}${c}=0
 <br><br>
-
-(중근)
-
-<br><br>
-
-<input id="x1">
-
-`;
-
-}else{
-
-problem.innerHTML=
-`
-
-x²
-${b>=0?"+":""}${b}x
-+${c}=0
-
-<br><br>
-
-<input id="x1">
-<input id="x2">
-
-`;
+x = <input id="a">`;
 
 }
 
-}
-
-function rootMode(){
-
-mode.innerText=
-"근의 공식 모드";
-
-let a,b,c,D;
-
-let range=
-getRootRange();
-
-while(true){
-
-a=
-Math.floor(Math.random()*range)+1;
-
-b=
-Math.floor(
-Math.random()*(range*4)
-)-(range*2);
-
-c=
-Math.floor(Math.random()*range)+1;
-
-D=b*b-4*a*c;
-
-let root=Math.sqrt(D);
-
-if(
-D>0
-&&
-root!=Math.floor(root)
-)break;
-
-}
-
-let d,e,f;
-
-if(b%2==0){
-
-d=a;
-e=-b/2;
-f=D/4;
-
-}else{
-
-d=2*a;
-e=-b;
-f=D;
-
-}
-
-let temp=simplifyRoot(f);
-
-let out=temp[0];
-let inside=temp[1];
-
-answer=[d,e,out,inside];
-
-problem.innerHTML=
-`
-
-${a==1?"":a}x²
-${b>=0?"+":""}${b}x
-+${c}=0
-
-<br><br>
-
-${
-d==1?
-
-`
-<div>
-
-x=
-<input id="eBox">
-
-±
-
-${
-out==1
-?
-`√ <input id="inBox">`
-:
-`<input id="outBox"> √ <input id="inBox">`
-}
-
-</div>
-`
-
-:
-
-`
-
-<div class="fraction">
-
-<div>
-
-x=
-<input id="eBox">
-
-±
-
-${
-out==1
-?
-`√ <input id="inBox">`
-:
-`<input id="outBox"> √ <input id="inBox">`
-}
-
-</div>
-
-<div class="line"></div>
-
-<input id="dBox">
-
-</div>
-
-`
-}
-
-`;
-
-}
-
+/* ===== 채점 ===== */
 function submitAnswer(){
 
-clearInterval(timer);
+let a = Number(document.getElementById("a").value);
 
-let t=
-Math.floor(
-(Date.now()-startTime)/1000
-);
-
-let gain=15-t;
-
-if(gain<1)
-gain=1;
-
-if(mode.innerText=="정수해 모드"){
-
-if(
-x1.value==""
-||
-(document.getElementById("x2")
-&&x2.value=="")
-){
-
-result.innerText=
-"빈칸 입력";
-
-startTimer();
-return;
-
-}
-
-let a=Number(x1.value);
-
-let b=
-document.getElementById("x2")
-?
-Number(x2.value)
-:
-a;
-
-if(
-
-(a==answer[0]
-&&
-b==answer[1])
-
-||
-
-(a==answer[1]
-&&
-b==answer[0])
-
-){
-
-score+=gain;
-
-result.innerHTML=
-'<span style="color:#22c55e">⭕ 정답!</span>';
-
+if(a == answer[0] || a == answer[1]){
+score += 10;
+document.getElementById("result").innerText = "⭕ 정답";
 }else{
-
 life--;
-
-result.innerHTML=
-'<span style="color:red">❌ 오답!</span>';
-
-}
-
-}else{
-
-let out;
-
-if(answer[2]==1){
-
-out=1;
-
-}else{
-
-out=
-Number(outBox.value);
-
-}
-
-let d=
-document.getElementById("dBox")
-?
-Number(dBox.value)
-:1;
-
-let e=Number(eBox.value);
-let inside=Number(inBox.value);
-
-if(
-d==answer[0]
-&&
-e==answer[1]
-&&
-out==answer[2]
-&&
-inside==answer[3]
-){
-
-score+=gain;
-
-result.innerHTML=
-'<span style="color:#22c55e">⭕ 정답!</span>';
-
-}else{
-
-life--;
-
-result.innerHTML=
-'<span style="color:red">❌ 오답!</span>';
-
-}
-
+document.getElementById("result").innerText = "❌ 오답";
 }
 
 updateUI();
 
-if(life<=0){
-
+if(life <= 0){
 gameOver();
-return;
-
+}else{
+newProblem();
+}
 }
 
-setTimeout(
-newProblem,
-1000
-);
-
+/* ===== Firebase 저장 ===== */
+async function saveScore(){
+await addDoc(collection(db,"ranking"),{
+name: playerName,
+score: score,
+time: Date.now()
+});
 }
 
-function gameOver(){
+/* ===== 랭킹 불러오기 ===== */
+async function loadRanking(){
 
-alert(
-"게임 종료\n최종 점수:"
-+score
-);
+const q = query(collection(db,"ranking"), orderBy("score","desc"));
+const snap = await getDocs(q);
 
-score=0;
-life=3;
+let html = "<h2>🏆 TOP 5</h2>";
+let i = 0;
 
+snap.forEach(doc=>{
+if(i<5){
+let d = doc.data();
+html += `${i+1}위 ${d.name} - ${d.score}<br>`;
+i++;
+}
+});
+
+document.getElementById("ranking").innerHTML = html;
+}
+
+/* ===== 게임 종료 ===== */
+async function gameOver(){
+
+await saveScore();
+await loadRanking();
+
+alert("게임 종료! 점수: " + score);
+
+score = 0;
+life = 3;
 updateUI();
-
 newProblem();
-
 }
 
 newProblem();
+updateUI();
 
 </script>
 
