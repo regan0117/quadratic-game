@@ -82,7 +82,7 @@ font-size:28px;
 <h2 id="mode"></h2>
 <div id="problem"></div>
 
-<button onclick="submitAnswer()">제출</button>
+<button id="submitBtn()">제출</button>
 
 <div id="result"></div>
 
@@ -308,7 +308,7 @@ score: score,
 time: Date.now()
 });
 }catch(e){
-console.log("저장 실패",e);
+console.log(e);
 }
 }
 
@@ -332,7 +332,7 @@ i++;
 document.getElementById("ranking").innerHTML=html;
 
 }catch(e){
-console.log("랭킹 실패",e);
+console.log(e);
 }
 }
 
@@ -350,7 +350,8 @@ life=3;
 updateUI();
 newProblem();
 }
-
+document.getElementById("submitBtn")
+  .addEventListener("click", submitAnswer);
 /* ================= 시작 ================= */
 newProblem();
 updateUI();
@@ -358,5 +359,4 @@ updateUI();
 </script>
 
 </body>
-</html>
-window.submitAnswer = submitAnswer;
+</html> 
